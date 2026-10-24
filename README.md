@@ -225,7 +225,7 @@ php artisan migrate --seed を実行することで、採点・確認用の管�
 | --- | --- | --- | --- |
 | 一般ユーザー 1 | user1@example.com | password | メール認証済み / テスト用ダミーデータ保持 |
 | 一般ユーザー 2 | user2@example.com | password | メール認証済み |
-| 一般ユーザー 3（管理者）user3@example.com | password | メール認証済み / admin_status = true (管理権限あり) |  |
+| 一般ユーザー 3（管理者） | user3@example.com | password | メール認証済み / admin_status = true (管理権限あり) |
 
 
 ## 📊 テスト用ダミーデータの構成（user1の意図的データ）
