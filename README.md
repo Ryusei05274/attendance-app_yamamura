@@ -265,7 +265,9 @@ Mailpit	http://localhost:8025/	受信メール確認用ツール
 
 命名に関する設計判断 画面設計書（PG:6、PG:12、PG:13）等では「打刻の修正申請」と記述されているため、初期は stamp_correction_request で基本設計書のパスに示し、実装に取り組んでいました。しかし、PM確認の結果、モデル・テーブル・ルート間の一貫性と実装・保守の容易性を最優先し、最終的に Attendance / Correction の命名を維持する方針としています。
 
-## ER
+## ER図
+
+```mermaid
 erDiagram
     users ||--o{ attendances : records
     attendances ||--o{ break_logs : contains
@@ -276,37 +278,37 @@ erDiagram
         bigint id PK
         string name
         string email UK
-        boolean is_admin
-        timestamp email_verified_a
+        timestamp email_verified_at "nullable"
         string password
-        text two_factor_secre
-        text two_factor_recovery_codes
-        timestamp two_factor_confirmed_a
+        text two_factor_secret "nullable"
+        text two_factor_recovery_codes "nullable"
+        timestamp two_factor_confirmed_at "nullable"
+        boolean is_admin
         string role
         string attendance_status
-        string remember_token
-        timestamp created_a
-        timestamp updated_a
+        string remember_token "nullable"
+        timestamp created_at
+        timestamp updated_at
     }
 
     attendances {
         bigint id PK
         bigint user_id FK
         date date
-        time clock_in
-        time clock_ou
-        text commen
-        timestamp created_a
-        timestamp updated_a
+        time clock_in "nullable"
+        time clock_out "nullable"
+        text comment "nullable"
+        timestamp created_at
+        timestamp updated_at
     }
 
     break_logs {
         bigint id PK
         bigint attendance_id FK
         time break_in
-        time break_ou
-        timestamp created_a
-        timestamp updated_a
+        time break_out "nullable"
+        timestamp created_at
+        timestamp updated_at
     }
 
     attendance_corrections {
@@ -315,14 +317,16 @@ erDiagram
         bigint user_id FK
         date original_date
         time new_clock_in
-        time new_clock_ou
+        time new_clock_out
+        text comment
         integer status
-        timestamp approved_a
-        json new_breaks
-        text commen
-        timestamp created_a
-        timestamp updated_a
+        timestamp approved_at "nullable"
+        json new_breaks "nullable"
+        timestamp created_at
+        timestamp updated_at
     }
+```
+
 コードは注意してご使用ください。
 
 🧪 テスト・品質管理・検証コマンド
