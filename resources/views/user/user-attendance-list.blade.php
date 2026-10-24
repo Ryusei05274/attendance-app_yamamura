@@ -10,9 +10,9 @@
         <h1 class="content__header--item">勤怠一覧</h1>
     </div>
     <div class="content__menu">
-        <a class="previous-month" href="?date={{ $previousMonth }}">前月</a>
-        <p class="current-month">{{ $date->format('Y/m') }}</p>
-        <a class="next-month" href="?date={{ $nextMonth }}">翌月</a>
+        <a class="previous-month" href="?date={{ $previousMonth }}"><img class="calendar-nav-icon" src="{{ asset('images/arrow.png') }}" alt="">前月</a>
+        <p class="current-month"><img class="calendar-month-icon" src="{{ asset('images/calender.png') }}" alt="">{{ $date->format('Y/m') }}</p>
+        <a class="next-month" href="?date={{ $nextMonth }}">翌月<img class="calendar-nav-icon calendar-nav-icon--next" src="{{ asset('images/arrow.png') }}" alt=""></a>
     </div>
     <table class="table">
         <tr class="table__row">

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: HTTPリクエストに対する共通ミドルウェア設定を定義する。
+ */
+
 namespace App\Http\Middleware;
 
 use App\Providers\RouteServiceProvider;
@@ -13,7 +17,7 @@ class RedirectIfAuthenticated
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
@@ -26,7 +30,7 @@ class RedirectIfAuthenticated
 
                 // 👑 管理者（admin）であれば、管理者用の日次一覧画面へリダイレクトさせます
                 if ($user && $user->role === 'admin') {
-                    return redirect('/admin/attendance/list'); 
+                    return redirect('/admin/attendance/list');
                 }
 
                 // 👤 一般ユーザーは、従来の標準ホームページ（/attendance）へ進ませます

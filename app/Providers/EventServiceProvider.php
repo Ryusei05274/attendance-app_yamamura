@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: イベントとリスナーの登録・検出を管理する。
+ */
+
 namespace App\Providers;
 
 use Illuminate\Auth\Events\Registered;

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠登録APIの入力項目と日本語エラーメッセージを検証する。
+ */
+
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Database\Query\Builder;

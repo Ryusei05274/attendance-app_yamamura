@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠更新APIの部分更新入力を検証する。
+ */
+
 namespace App\Http\Requests\Api\V1;
 
 use App\Models\Attendance;

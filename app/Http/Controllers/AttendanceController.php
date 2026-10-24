@@ -1,12 +1,18 @@
 <?php
 
+/**
+ * 役割: 一般ユーザーの打刻、勤怠一覧、勤務時間計算を処理する。
+ */
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AttendanceListRequest;
+use App\Http\Requests\AttendanceRecordRequest;
 use App\Models\Attendance;
 use App\Models\BreakLog;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -46,14 +52,12 @@ class AttendanceController extends Controller
     }
 
     /** Apply one valid punch transition for the authenticated user.
-     * @param Request $request 入力と認証情報を含むリクエスト。
+     * @param  Request  $request  入力と認証情報を含むリクエスト。
      * @return RedirectResponse 処理後の遷移先。
      */
-    public function updateStatus(Request $request): RedirectResponse
+    public function updateStatus(AttendanceRecordRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'action' => 'required|in:clock_in,break_in,break_out,clock_out',
-        ]);
+        $validated = $request->validated();
 
         $user = Auth::user();
         $now = Carbon::now();
@@ -82,7 +86,7 @@ class AttendanceController extends Controller
                 return null;
             }
 
-            abort_unless($attendance && !$attendance->clock_out, 422, '不正な操作です。');
+            abort_unless($attendance && ! $attendance->clock_out, 422, '不正な操作です。');
             $openBreak = BreakLog::where('attendance_id', $attendance->id)
                 ->whereNull('break_out')
                 ->lockForUpdate()
@@ -91,12 +95,14 @@ class AttendanceController extends Controller
             if ($action === 'break_in') {
                 abort_if($openBreak, 422, '不正な操作です。');
                 $attendance->breakLogs()->create(['break_in' => $now->format('H:i:s')]);
+
                 return null;
             }
 
             if ($action === 'break_out') {
                 abort_unless($openBreak, 422, '不正な操作です。');
                 $openBreak->update(['break_out' => $now->format('H:i:s')]);
+
                 return null;
             }
 
@@ -107,19 +113,17 @@ class AttendanceController extends Controller
         });
 
         $redirect = redirect()->route('attendance.register');
+
         return $message ? $redirect->with('status_message', $message) : $redirect;
     }
 
     /** Render the authenticated user's attendance records for a requested month.
-     * @param Request $request 入力と認証情報を含むリクエスト。
+     * @param  Request  $request  入力と認証情報を含むリクエスト。
      * @return View|RedirectResponse 一覧画面、または入力が不正な場合の遷移先。
      */
-    public function index(Request $request): View|RedirectResponse
+    public function index(AttendanceListRequest $request): View|RedirectResponse
     {
-        $month = $request->query('date', Carbon::now()->format('Y-m'));
-        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
-            return redirect()->route('attendance.list');
-        }
+        $month = $request->validated('date') ?? Carbon::now()->format('Y-m');
 
         $date = Carbon::createFromFormat('!Y-m', $month);
         $attendances = Attendance::with('breakLogs')
@@ -129,9 +133,10 @@ class AttendanceController extends Controller
             ->get()
             ->map(function (Attendance $attendance) {
                 $breakSeconds = $attendance->breakLogs->sum(function (BreakLog $break) use ($attendance) {
-                    if (!$break->break_in || !$break->break_out) {
+                    if (! $break->break_in || ! $break->break_out) {
                         return 0;
                     }
+
                     return $this->durationSeconds($attendance->date, $break->break_in, $break->break_out);
                 });
 
@@ -159,9 +164,9 @@ class AttendanceController extends Controller
     }
 
     /** Return the duration between two clock times, including overnight shifts.
-     * @param string $date 処理に使用する値。
-     * @param string $start 処理に使用する値。
-     * @param string $end 処理に使用する値。
+     * @param  string  $date  処理に使用する値。
+     * @param  string  $start  処理に使用する値。
+     * @param  string  $end  処理に使用する値。
      * @return int 処理結果。
      */
     private function durationSeconds(string $date, string $start, string $end): int
@@ -171,11 +176,12 @@ class AttendanceController extends Controller
         if ($to->lt($from)) {
             $to->addDay();
         }
+
         return $from->diffInSeconds($to);
     }
 
     /** Format a duration in seconds as hours and minutes.
-     * @param int $seconds 処理に使用する値。
+     * @param  int  $seconds  処理に使用する値。
      * @return string 処理結果。
      */
     private function formatDuration(int $seconds): string

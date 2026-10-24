@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: APIレスポンスに含める修正申請情報を整形する。
+ */
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;

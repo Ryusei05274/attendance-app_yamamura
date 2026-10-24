@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: アプリケーション全体のサービス登録と初期設定を行う。
+ */
+
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;

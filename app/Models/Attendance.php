@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠レコードとユーザー、休憩、修正申請との関連を定義する。
+ */
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,5 +45,11 @@ class Attendance extends Model
     public function attendanceCorrections(): HasMany
     {
         return $this->hasMany(AttendanceCorrection::class, 'attendance_id');
+    }
+
+    /** @return HasMany<AttendanceCorrection, $this> Correction requests exposed as API applications. */
+    public function applications(): HasMany
+    {
+        return $this->attendanceCorrections();
     }
 }

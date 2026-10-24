@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: ログインユーザーのパスワード変更を処理する。
+ */
+
 namespace App\Actions\Fortify;
 
 use App\Models\User;

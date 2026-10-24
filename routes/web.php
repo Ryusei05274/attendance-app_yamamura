@@ -1,19 +1,23 @@
 <?php
 
+/**
+ * 役割: Web画面と認証・管理者向けのルートを定義する。
+ */
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
+use App\Http\Controllers\Admin\AttendanceCorrectionController as AdminAttendanceCorrectionController;
 use App\Http\Controllers\Admin\AttendanceCsvController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\StaffController as AdminStaffController;
 use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\AttendanceCorrectionController;
+use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return redirect()->route('login');
     }
 
@@ -62,7 +66,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/attendance/{attendance_id}', [AdminAttendanceController::class, 'show'])->name('attendance.detail');
         Route::put('/attendance/{attendance_id}', [AdminAttendanceController::class, 'update'])->name('attendance.update');
         Route::get('/staff/list', [AdminStaffController::class, 'index'])->name('staff.list');
-        Route::get('/attendance_correction_request/approve/{attendance_correct_request_id}', [AttendanceCorrectionController::class, 'showApprove'])->name('correction.approve');
-        Route::post('/attendance_correction_request/approve/{attendance_correct_request_id}', [AttendanceCorrectionController::class, 'approve'])->name('correction.approve.store');
+        Route::get('/attendance/correction-request/list', [AdminAttendanceCorrectionController::class, 'index'])->name('correction.list');
+        Route::get('/attendance_correction_request/approve/{attendance_correct_request_id}', [AdminAttendanceCorrectionController::class, 'showApprove'])->name('correction.approve');
+        Route::post('/attendance_correction_request/approve/{attendance_correct_request_id}', [AdminAttendanceCorrectionController::class, 'approve'])->name('correction.approve.store');
     });
 });

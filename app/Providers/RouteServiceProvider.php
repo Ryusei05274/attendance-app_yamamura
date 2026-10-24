@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: アプリケーションのルート登録と標準遷移先を設定する。
+ */
+
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;

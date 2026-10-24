@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠APIレスポンスの項目と読み込み済み関連を整形する。
+ */
+
 namespace App\Http\Resources;
 
 use Carbon\Carbon;

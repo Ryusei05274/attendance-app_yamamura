@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠一覧APIの検索条件とページ情報を検証する。
+ */
+
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;

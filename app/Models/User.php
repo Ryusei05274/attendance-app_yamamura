@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: ユーザー情報、メール認証、勤怠・修正申請との関連を定義する。
+ */
+
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -23,7 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'attendance_status', 
+        'attendance_status',
     ];
 
     /**
@@ -56,7 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /** Persist the view-facing administrator alias to the existing schema column.
-     * @param mixed $value 処理に使用する値。
+     * @param  mixed  $value  処理に使用する値。
      * @return void 戻り値なし。
      */
     public function setAdminStatusAttribute(mixed $value): void
@@ -87,7 +91,4 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(AttendanceCorrection::class);
     }
-    
 }
-
-  

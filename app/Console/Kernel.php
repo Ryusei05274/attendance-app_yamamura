@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: Artisanコマンドとスケジュール実行を管理する。
+ */
+
 namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;

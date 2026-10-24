@@ -10,9 +10,9 @@
         <h1 class="content__header--item">{{ $date->format('Y年m月d日') }}の勤怠</h1>
     </div>
     <div class="content__menu">
-        <a class="previous-day" href="?date={{ $previousDay }}">前日</a>
-        <p class="current-day">{{ $date->format('Y/m/d') }}</p>
-        <a class="next-day" href="?date={{ $nextDay }}">翌日</a>
+        <a class="previous-day" href="?date={{ $previousDay }}"><img class="calendar-nav-icon" src="{{ asset('images/arrow.png') }}" alt="">前日</a>
+        <p class="current-day"><img class="calendar-month-icon" src="{{ asset('images/calender.png') }}" alt="">{{ $date->format('Y/m/d') }}</p>
+        <a class="next-day" href="?date={{ $nextDay }}">翌日<img class="calendar-nav-icon calendar-nav-icon--next" src="{{ asset('images/arrow.png') }}" alt=""></a>
     </div>
     <table class="table">
         <tr class="table__row">

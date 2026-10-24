@@ -17,3 +17,9 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Windows attachment metadata and local backup folders
+*:Zone.Identifier
+/attendance-app/
+/advanced-php-changes/
+/advanced-php-changes.zip

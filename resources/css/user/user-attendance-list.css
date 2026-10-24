@@ -37,9 +37,32 @@
 }
 
 .previous-month,
-.next-month,
+.next-month {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+}
+
 .current-month {
-    display: inline-block;
+    align-items: center;
+    display: inline-flex;
+}
+
+.calendar-nav-icon {
+    display: block;
+    height: 13px;
+    opacity: 0.3;
+    width: 20px;
+}
+
+.calendar-nav-icon--next {
+    transform: scaleX(-1);
+}
+
+.calendar-month-icon {
+    height: 20px;
+    margin-right: 5px;
+    width: 20px;
 }
 
 .previous-month,
@@ -47,42 +70,6 @@
     color: #737373;
     font-weight: 700;
     text-decoration: none;
-}
-
-.previous-month::before {
-    background: url('/images/arrow.png') no-repeat center;
-    background-size: contain;
-    content: '';
-    display: inline-block;
-    height: 13px;
-    opacity: 0.3;
-    width: 20px;
-}
-
-.current-month::before {
-    background: url('/images/calender.png') no-repeat center;
-    background-size: contain;
-    content: '';
-    display: inline-block;
-    height: 20px;
-    margin-right: 5px;
-    vertical-align: middle;
-    width: 20px;
-}
-
-.next-month-placeholder {
-    margin-left: 50px;
-}
-
-.next-month::after {
-    background: url('/images/arrow.png') no-repeat center;
-    background-size: contain;
-    content: '';
-    display: inline-block;
-    height: 13px;
-    opacity: 0.3;
-    transform: scale(-1, 1);
-    width: 20px;
 }
 
 .current-month {

@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * 役割: 外部アプリ向け勤怠API v1のルートを定義する。
+ */
 use App\Http\Controllers\Api\V1\AttendanceRecordController;
 use Illuminate\Support\Facades\Route;
 

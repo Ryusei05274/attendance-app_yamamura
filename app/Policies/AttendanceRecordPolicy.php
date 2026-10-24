@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠の作成・更新・削除を本人または管理者に許可する。
+ */
+
 namespace App\Policies;
 
 use App\Models\Attendance;

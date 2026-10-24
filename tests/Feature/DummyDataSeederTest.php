@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: Seederのダミーデータとレポート集計値を検証するFeatureテスト。
+ */
+
 namespace Tests\Feature;
 
 use App\Models\Attendance;

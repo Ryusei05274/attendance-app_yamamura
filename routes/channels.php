@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * 役割: アプリケーションのブロードキャストチャンネルを定義する。
+ */
 use Illuminate\Support\Facades\Broadcast;
 
 /*

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: スタッフ別の月次勤怠をCSV形式で出力する。
+ */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -13,16 +17,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AttendanceCsvController extends Controller
 {
     /** Download a staff member's attendance records for the selected month.
-     * @param Request $request Selected month input.
-     * @param int $user_id Staff member whose records are being exported.
+     * @param  int  $user_id  Staff member whose records are being exported.
      * @return StreamedResponse UTF-8 BOM CSV download.
      */
     public function export(Request $request, int $user_id): StreamedResponse
     {
-        $validated = $request->validate([
-            'year_month' => ['required', 'date_format:Y-m'],
-        ]);
-        $month = Carbon::createFromFormat('!Y-m-d', $validated['year_month'].'-01');
+        $yearMonth = $request->input('year_month');
+        $month = Carbon::createFromFormat('!Y-m-d', $yearMonth.'-01');
         $user = User::query()->where('role', 'user')->findOrFail($user_id);
 
         $records = Attendance::query()
@@ -81,7 +82,7 @@ class AttendanceCsvController extends Controller
     }
 
     /** Format a number of minutes as hours and minutes.
-     * @param int $minutes Duration in minutes.
+     * @param  int  $minutes  Duration in minutes.
      * @return string HH:MM duration.
      */
     private function formatMinutes(int $minutes): string

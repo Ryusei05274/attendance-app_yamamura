@@ -1,13 +1,18 @@
 <?php
 
+/**
+ * 役割: 一般ユーザーの勤怠詳細と修正申請、管理者の申請承認を処理する。
+ */
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AttendanceCorrectionRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -19,7 +24,7 @@ class AttendanceCorrectionController extends Controller
     public function index(): View|RedirectResponse
     {
         $user = auth()->user();
-        if ($user->role !== 'admin' && $user instanceof MustVerifyEmail && !$user->hasVerifiedEmail()) {
+        if ($user->role !== 'admin' && $user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
             return redirect()->route('verification.notice');
         }
 
@@ -52,7 +57,7 @@ class AttendanceCorrectionController extends Controller
     }
 
     /** Show an attendance record and any pending proposed edits.
-     * @param int $attendance_id 対象レコードの識別子。
+     * @param  int  $attendance_id  対象レコードの識別子。
      * @return View 表示する画面とそのデータ。
      */
     public function show(int $attendance_id): View
@@ -86,7 +91,7 @@ class AttendanceCorrectionController extends Controller
             'application' => $pending,
             'breaks' => $breaks->map(fn ($break) => [
                 'break_in' => isset($break['break_in']) ? Carbon::parse($break['break_in'])->format('H:i') : '',
-                'break_out' => !empty($break['break_out']) ? Carbon::parse($break['break_out'])->format('H:i') : '',
+                'break_out' => ! empty($break['break_out']) ? Carbon::parse($break['break_out'])->format('H:i') : '',
             ])->values()->all(),
         ];
 
@@ -98,11 +103,11 @@ class AttendanceCorrectionController extends Controller
     }
 
     /** Validate and submit an attendance correction request.
-     * @param Request $request 入力と認証情報を含むリクエスト。
-     * @param int $attendance_id 対象レコードの識別子。
+     * @param  Request  $request  入力と認証情報を含むリクエスト。
+     * @param  int  $attendance_id  対象レコードの識別子。
      * @return RedirectResponse 処理後の遷移先。
      */
-    public function store(Request $request, int $attendance_id): RedirectResponse
+    public function store(AttendanceCorrectionRequest $request, int $attendance_id): RedirectResponse
     {
         $user = auth()->user();
         abort_if($user->role === 'admin', 404);
@@ -112,60 +117,20 @@ class AttendanceCorrectionController extends Controller
             return back()->withErrors(['attendance' => '承認待ちの申請があるため、修正できません。']);
         }
 
-        $validated = $request->validate([
-            'new_clock_in' => 'required|date_format:H:i',
-            'new_clock_out' => 'required|date_format:H:i',
-            'new_break_in' => 'array',
-            'new_break_in.*' => 'nullable|date_format:H:i',
-            'new_break_out' => 'array',
-            'new_break_out.*' => 'nullable|date_format:H:i',
-            'comment' => 'required|string|max:255',
-        ], [
-            'new_clock_in.required' => '出勤時間を入力してください',
-            'new_clock_out.required' => '退勤時間を入力してください',
-            'comment.required' => '備考を記入してください',
-        ]);
+        $validated = $request->validated();
 
-        $in = Carbon::createFromFormat('H:i', $validated['new_clock_in']);
-        $out = Carbon::createFromFormat('H:i', $validated['new_clock_out']);
-        if ($out->lte($in)) {
-            return back()->withErrors(['new_clock_out' => '出勤時間もしくは退勤時間が不適切な値です'])->withInput();
-        }
+        $breaks = collect($validated['new_break_in'] ?? [])
+            ->map(function (?string $breakIn, int $index) use ($validated): ?array {
+                $breakOut = $validated['new_break_out'][$index] ?? null;
+                if (! $breakIn || ! $breakOut) {
+                    return null;
+                }
 
-        $breakError = null;
-        $breaks = collect($validated['new_break_in'] ?? [])->map(function (?string $breakIn, int $index) use ($validated, $in, $out, &$breakError): ?array {
-            $breakOut = $validated['new_break_out'][$index] ?? null;
-            if (!$breakIn && !$breakOut) {
-                return null;
-            }
-            if (!$breakIn || !$breakOut) {
-                $breakError = ["new_break_in.$index" => '休憩時間が不適切な値です'];
-                return null;
-            }
-            $breakStart = Carbon::createFromFormat('H:i', $breakIn);
-            $breakEnd = Carbon::createFromFormat('H:i', $breakOut);
-            if ($breakEnd->gt($out)) {
-                $breakError = ["new_break_out.$index" => '休憩時間もしくは退勤時間が不適切な値です'];
-                return null;
-            }
-            if ($breakStart->lt($in) || $breakEnd->lte($breakStart)) {
-                $breakError = ["new_break_in.$index" => '休憩時間が不適切な値です'];
-                return null;
-            }
-            return ['break_in' => $breakIn, 'break_out' => $breakOut];
-        })->filter()->sortBy('break_in')->values();
-        if ($breakError !== null) {
-            return back()->withErrors($breakError)->withInput();
-        }
-
-        $overlap = $breaks->sliding(2)->first(function ($pair): bool {
-            $pair = $pair->values();
-            return $pair[1]['break_in'] < $pair[0]['break_out'];
-        });
-        if ($overlap !== null) {
-            return back()->withErrors(['new_break_in' => '休憩時間が不適切な値です'])->withInput();
-        }
-
+                return ['break_in' => $breakIn, 'break_out' => $breakOut];
+            })
+            ->filter()
+            ->sortBy('break_in')
+            ->values();
         AttendanceCorrection::create([
             'attendance_id' => $attendance->id,
             'user_id' => $user->id,
@@ -181,7 +146,7 @@ class AttendanceCorrectionController extends Controller
     }
 
     /** Prepare a correction request for its approval detail page.
-     * @param int $attendance_correct_request_id 対象レコードの識別子。
+     * @param  int  $attendance_correct_request_id  対象レコードの識別子。
      * @return View 表示する画面とそのデータ。
      */
     public function showApprove(int $attendance_correct_request_id): View
@@ -200,7 +165,7 @@ class AttendanceCorrectionController extends Controller
     }
 
     /** Atomically approve a correction and apply its proposed values.
-     * @param int $attendance_correct_request_id 対象レコードの識別子。
+     * @param  int  $attendance_correct_request_id  対象レコードの識別子。
      * @return RedirectResponse 処理後の遷移先。
      */
     public function approve(int $attendance_correct_request_id): RedirectResponse

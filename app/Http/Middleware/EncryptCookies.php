@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: HTTPリクエストに対する共通ミドルウェア設定を定義する。
+ */
+
 namespace App\Http\Middleware;
 
 use Illuminate\Cookie\Middleware\EncryptCookies as Middleware;

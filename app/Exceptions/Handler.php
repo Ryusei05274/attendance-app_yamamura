@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 例外を画面向けまたはAPI向けのレスポンスに変換する。
+ */
+
 namespace App\Exceptions;
 
 use Illuminate\Auth\Access\AuthorizationException;

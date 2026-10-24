@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: ログインユーザーの勤怠レポートを集計して表示する。
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
@@ -31,8 +35,7 @@ class AttendanceReportController extends Controller
         $workMinutes = $records->mapWithKeys(fn (Attendance $attendance): array => [
             $attendance->id => $this->workMinutes($attendance),
         ]);
-        $recordsByMonth = $records->groupBy(fn (Attendance $attendance): string =>
-            Carbon::parse($attendance->date)->format('Y-m')
+        $recordsByMonth = $records->groupBy(fn (Attendance $attendance): string => Carbon::parse($attendance->date)->format('Y-m')
         );
 
         $monthlyTrend = collect(range(5, 0))->map(function (int $monthsAgo) use ($currentMonth, $recordsByMonth, $workMinutes): array {
@@ -43,8 +46,7 @@ class AttendanceReportController extends Controller
             return [
                 'month' => $month->format('Y年n月'),
                 'work_minutes' => $monthMinutes,
-                'overtime_minutes' => $monthRecords->sum(fn (Attendance $attendance): int =>
-                    max(0, $workMinutes->get($attendance->id, 0) - 8 * 60)
+                'overtime_minutes' => $monthRecords->sum(fn (Attendance $attendance): int => max(0, $workMinutes->get($attendance->id, 0) - 8 * 60)
                 ),
             ];
         });
@@ -62,8 +64,7 @@ class AttendanceReportController extends Controller
             'anomalies' => [
                 'late_count' => $currentMonthRecords->filter(fn (Attendance $attendance): bool => $attendance->clock_in !== null && $attendance->clock_in > '09:00:00')->count(),
                 'early_leave_count' => $currentMonthRecords->filter(fn (Attendance $attendance): bool => $attendance->clock_out !== null && $attendance->clock_out < '18:00:00')->count(),
-                'long_work_count' => $currentMonthRecords->filter(fn (Attendance $attendance): bool =>
-                    $workMinutes->get($attendance->id, 0) > 10 * 60
+                'long_work_count' => $currentMonthRecords->filter(fn (Attendance $attendance): bool => $workMinutes->get($attendance->id, 0) > 10 * 60
                 )->count(),
             ],
         ]);
@@ -72,12 +73,12 @@ class AttendanceReportController extends Controller
     /**
      * Calculate net work time after subtracting completed breaks.
      *
-     * @param Attendance $attendance An attendance record with break logs eager loaded.
+     * @param  Attendance  $attendance  An attendance record with break logs eager loaded.
      * @return int Net work duration in minutes.
      */
     private function workMinutes(Attendance $attendance): int
     {
-        if (!$attendance->clock_in || !$attendance->clock_out) {
+        if (! $attendance->clock_in || ! $attendance->clock_out) {
             return 0;
         }
 
@@ -88,7 +89,7 @@ class AttendanceReportController extends Controller
         }
 
         $breakMinutes = $attendance->breakLogs->sum(function (BreakLog $break) use ($attendance): int {
-            if (!$break->break_in || !$break->break_out) {
+            if (! $break->break_in || ! $break->break_out) {
                 return 0;
             }
 

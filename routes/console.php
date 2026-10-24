@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * 役割: Artisanコンソールで利用するコマンドを定義する。
+ */
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 

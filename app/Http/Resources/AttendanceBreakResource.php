@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: APIレスポンスに含める休憩時刻を整形する。
+ */
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;

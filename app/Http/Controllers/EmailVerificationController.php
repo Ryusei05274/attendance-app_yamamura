@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: メール認証案内、認証リンク、認証メール再送を処理する。
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -12,13 +16,13 @@ use Illuminate\View\View;
 class EmailVerificationController extends Controller
 {
     /** Display the email verification instructions for a pending or authenticated user.
-     * @param Request $request Current authenticated request.
+     * @param  Request  $request  Current authenticated request.
      * @return View|RedirectResponse Verification instructions or the attendance page.
      */
     public function notice(Request $request): View|RedirectResponse
     {
         $user = $request->user() ?? User::find(session('verification.pending_user_id'));
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 
@@ -32,9 +36,9 @@ class EmailVerificationController extends Controller
     }
 
     /** Verify the account using Laravel's signed verification link and sign the user in.
-     * @param Request $request Signed verification request.
-     * @param int $id User identifier from the signed URL.
-     * @param string $hash Email hash from the signed URL.
+     * @param  Request  $request  Signed verification request.
+     * @param  int  $id  User identifier from the signed URL.
+     * @param  string  $hash  Email hash from the signed URL.
      * @return RedirectResponse Redirect to attendance after successful verification.
      */
     public function verify(Request $request, int $id, string $hash): RedirectResponse
@@ -42,7 +46,7 @@ class EmailVerificationController extends Controller
         $user = User::findOrFail($id);
         abort_unless(hash_equals(sha1($user->getEmailForVerification()), $hash), 403);
 
-        if (!$user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
+        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 
@@ -54,13 +58,13 @@ class EmailVerificationController extends Controller
     }
 
     /** Send another verification email when the address is still unverified.
-     * @param Request $request Current authenticated request.
+     * @param  Request  $request  Current authenticated request.
      * @return RedirectResponse Return to the instruction page with a status message.
      */
     public function send(Request $request): RedirectResponse
     {
         $user = $request->user() ?? User::find(session('verification.pending_user_id'));
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login');
         }
 

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 認可ポリシーと認証関連の登録を行う。
+ */
+
 namespace App\Providers;
 
 use App\Models\Attendance;

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models;
+/**
+ * 役割: APIの勤怠レコードで既存Attendanceモデルとの互換性を提供する。
+ */
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
+namespace App\Models;
 
 /**
  * API-facing model name for the existing attendances table.
@@ -10,14 +12,4 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AttendanceRecord extends Attendance
 {
     protected $table = 'attendances';
-
-    /**
-     * Get correction applications associated with the attendance record.
-     *
-     * @return HasMany<AttendanceCorrection, $this>
-     */
-    public function applications(): HasMany
-    {
-        return $this->hasMany(AttendanceCorrection::class, 'attendance_id');
-    }
 }

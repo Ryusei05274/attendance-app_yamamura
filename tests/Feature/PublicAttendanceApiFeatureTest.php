@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠APIの一覧・詳細・登録・更新・削除、認証・認可のFeatureテスト。
+ */
+
 namespace Tests\Feature;
 
 use App\Models\Attendance;
@@ -27,6 +31,7 @@ class PublicAttendanceApiFeatureTest extends TestCase
 
     public function test_public_index_filters_and_returns_paginated_json_without_break_details(): void
     {
+        // テストDBに勤怠サンプルを作り、一覧APIのページング結果を確認する。
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
         $older = $this->attendance($user, '2026-10-01');
@@ -38,6 +43,7 @@ class PublicAttendanceApiFeatureTest extends TestCase
             'break_out' => '13:00:00',
         ]);
 
+        // GET一覧がdata配列とmetaのページ情報を返すことを確認する。
         $this->getJson('/api/v1/attendance-records?user_id='.$user->id.'&month=2026-10&per_page=1&page=2')
             ->assertOk()
             ->assertJsonStructure([
@@ -62,6 +68,7 @@ class PublicAttendanceApiFeatureTest extends TestCase
 
     public function test_public_show_includes_user_breaks_and_correction_applications(): void
     {
+        // 勤怠・ユーザー・休憩・修正申請を用意し、詳細APIの関連データを確認する。
         $user = User::factory()->create();
         $attendance = $this->attendance($user, '2026-10-04');
         BreakLog::query()->create([
@@ -82,15 +89,20 @@ class PublicAttendanceApiFeatureTest extends TestCase
 
         $this->getJson('/api/v1/attendance-records/'.$attendance->id)
             ->assertOk()
+            ->assertJsonPath('data.user.name', $user->name)
+            ->assertJsonPath('data.user.email', $user->email)
             ->assertJsonPath('data.user.id', $user->id)
             ->assertJsonPath('data.breaks.0.break_in', '12:00:00')
+            ->assertJsonPath('data.breaks.0.break_out', '13:00:00')
             ->assertJsonPath('data.applications.0.comment', '時刻修正')
+            ->assertJsonPath('data.applications.0.status', 0)
             ->assertJsonPath('data.total_time', '8:00')
             ->assertJsonPath('data.total_break_time', '1:00');
     }
 
     public function test_unknown_read_and_write_ids_return_the_documented_404_json(): void
     {
+        // 存在しないIDへの読み取りで、仕様書どおりの404 JSONを返すことを確認する。
         $user = User::factory()->create();
 
         $this->getJson('/api/v1/attendance-records/99999')

@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * 役割: データベースのテーブル構造を作成または変更する。
+ */
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

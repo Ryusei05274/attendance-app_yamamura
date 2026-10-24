@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 公開勤怠API v1の検索、詳細、登録、更新、削除を処理する。
+ */
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;

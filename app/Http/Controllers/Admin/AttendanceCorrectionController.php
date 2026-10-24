@@ -1,14 +1,17 @@
 <?php
 
+/**
+ * 役割: 管理者向け修正申請一覧と承認処理を担当する。
+ */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceCorrection;
 use App\Models\Attendance;
-use Illuminate\Http\Request;
+use App\Models\AttendanceCorrection;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Illuminate\View\View;
 
 class AttendanceCorrectionController extends Controller
@@ -17,31 +20,25 @@ class AttendanceCorrectionController extends Controller
      * 💡 【US014 / PG12】管理者用：修正申請一覧画面の表示処理
      * 要件FN047・FN048に基づき、「承認待ち」と「承認済み」のタブ切り替えに対応します
      */
-    /** List correction requests by approval status with users and attendances eager loaded.
-     * @param Request $request 入力と認証情報を含むリクエスト。
+    /** 管理者向けに全ユーザーの修正申請一覧を表示する。
      * @return View 表示する画面とそのデータ。
      */
-    public function index(Request $request): View
+    public function index(): View
     {
-        if (auth()->check()) {
-            auth()->user()->admin_status = true; // 右上メニュー用ガード
-        }
-
-        // タブの判定（指定がない場合は「承認待ち: status = 0」とする。承認済みは status = 1 と仮定）
-        // ※設計の数値ルールに合わせて 0 や 1 を調整してください
-        $tab = $request->query('tab', 'pending');
-        $statusLook = ($tab === 'approved') ? 1 : 0;
-
-        // 全一般ユーザーから届いた対象ステータスの申請をまとめて取得（N+1回避）
+        // Bladeの2つのタブで表示を分けるため、承認待ちと承認済みの両方を取得する。
         $requests = AttendanceCorrection::with(['user', 'attendance'])
-            ->where('status', $statusLook)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->latest()
+            ->get()
+            ->each(function (AttendanceCorrection $correction): void {
+                $correction->approval_status = (int) $correction->status === 0 ? '承認待ち' : '承認済み';
+                $correction->application_date = $correction->created_at?->format('Y/m/d');
+                // 既存の一覧Bladeが参照する名称に合わせる。
+                $correction->AttendanceRecord = $correction->attendance;
+            });
 
         return view('admin.admin-application-list', [
-            'applications' => $requests, 
-            'tab'          => $tab
-]);
+            'applications' => $requests,
+        ]);
 
     }
 
@@ -49,35 +46,22 @@ class AttendanceCorrectionController extends Controller
      * 💡 【US015 / PG13】管理者用：修正申請承認画面の表示処理
      * 送られてきた申請内容を、以前提示していただいた「承認画面用Blade」に流し込みます
      */
-    /** Show the selected correction request and its proposed values.
-     * @param int $attendance_correct_request_id 対象レコードの識別子。
+    /** 選択された修正申請と申請内容を表示する。
+     * @param  int  $attendance_correct_request_id  対象レコードの識別子。
      * @return View 表示する画面とそのデータ。
      */
     public function showApprove(int $attendance_correct_request_id): View
     {
-        if (auth()->check()) {
-            auth()->user()->admin_status = true;
-        }
-
-        // 該当の申請データを取得
+        // 申請、申請者、対象勤怠を取得して承認画面用に整形する。
         $application = AttendanceCorrection::with(['user', 'attendance'])->findOrFail($attendance_correct_request_id);
         $user = $application->user;
+        $application->approval_status = (int) $application->status === 0 ? '承認待ち' : '承認済み';
+        $application->new_date = Carbon::parse($application->original_date ?? $application->attendance->date);
+        $application->new_clock_in = Carbon::parse($application->new_clock_in)->format('H:i');
+        $application->new_clock_out = Carbon::parse($application->new_clock_out)->format('H:i');
+        $application->proposalBreaks = collect($application->new_breaks ?? [])
+            ->map(fn (array $break): object => (object) $break);
 
-        // 💡 以前共有いただいたBladeが「$application->new_date」などのCarbonオブジェクトを求めているため
-        // メモリ上で一時的に整形して互換性をもたせます（Bladeを書き換えないための工夫）
-        $application->new_date = Carbon::parse($application->ororiginal_date ?? $application->attendance->date);
-        
-        // 休憩ログ風に見せるためのダミーコレクションを作成（Bladeの@foreachループを突破するため）
-        $proposalBreaks = collect();
-        if ($application->new_break_in && $application->new_break_out) {
-            $proposalBreaks->push((object)[
-                'break_in' => $application->new_break_in,
-                'break_out' => $application->new_break_out,
-            ]);
-        }
-        $application->proposalBreaks = $proposalBreaks;
-
-        // 以前共有いただいた変数構造 ($application, $user) でそのまま引き渡します
         return view('admin.admin-application-detail', compact('application', 'user'));
     }
 
@@ -85,48 +69,52 @@ class AttendanceCorrectionController extends Controller
      * 💡 【US015 / FN051】👑 修正申請の承認・本番データ一斉反映ロジック
      * 管理者が「承認」ボタンを押した瞬間、1つのトランザクションで確実にDBを書き換えます
      */
-    /** Approve a correction and atomically apply its attendance and break changes.
-     * @param Request $request 入力と認証情報を含むリクエスト。
-     * @param int $attendance_correct_request_id 対象レコードの識別子。
+    /** 修正申請を承認し、申請内容を勤怠と休憩記録に反映する。
+     * @param  int  $attendance_correct_request_id  対象レコードの識別子。
      * @return RedirectResponse 処理後の遷移先。
      */
-    public function approve(Request $request, int $attendance_correct_request_id): RedirectResponse
+    public function approve(int $attendance_correct_request_id): RedirectResponse
     {
-        // データの不整合を防ぐためDBトランザクションを開始
-        DB::transaction(function () use ($attendance_correct_request_id) {
-            
-            // 1. 申請データの取得
-            $correctionRequest = AttendanceCorrection::findOrFail($attendance_correct_request_id);
+        $alreadyApproved = false;
 
-            // 2. 本番の勤怠メインレコード（attendancesテーブル）を申請内容で直接上書き更新
-            $attendance = Attendance::findOrFail($correctionRequest->attendance_id);
-            $attendance->update([
-                'clock_in'  => $correctionRequest->new_clock_in,
-                'clock_out' => $correctionRequest->new_clock_out,
-                'comment'   => $correctionRequest->comment,
-            ]);
+        DB::transaction(function () use ($attendance_correct_request_id, &$alreadyApproved): void {
+            $correctionRequest = AttendanceCorrection::with('attendance')
+                ->lockForUpdate()
+                ->findOrFail($attendance_correct_request_id);
 
-            // 3. 本番の休憩レコード（break_logsテーブル）も申請された新しい休憩時間で書き換える
-            // 既存の休憩を一度リセット
-            $attendance->breakLogs()->delete();
-            
-            // 申請に休憩時間が入力されていれば再作成
-            if ($correctionRequest->new_break_in && $correctionRequest->new_break_out) {
-                $attendance->breakLogs()->create([
-                    'break_in'  => $correctionRequest->new_break_in,
-                    'break_out' => $correctionRequest->new_break_out,
-                ]);
+            if ((int) $correctionRequest->status !== 0) {
+                $alreadyApproved = true;
+
+                return;
             }
 
-            // 4. 申請データのステータスを「承認済み(1)」に更新
+            $attendance = Attendance::lockForUpdate()->findOrFail($correctionRequest->attendance_id);
+            $attendance->update([
+                'clock_in' => $correctionRequest->new_clock_in,
+                'clock_out' => $correctionRequest->new_clock_out,
+                'comment' => $correctionRequest->comment,
+            ]);
+
+            $attendance->breakLogs()->delete();
+            collect($correctionRequest->new_breaks ?? [])->each(
+                fn (array $break) => $attendance->breakLogs()->create([
+                    'break_in' => $break['break_in'],
+                    'break_out' => $break['break_out'] ?? null,
+                ])
+            );
+
             $correctionRequest->update([
-                'status'      => 1,
-                'approved_at' => Carbon::now(),
+                'status' => 1,
+                'approved_at' => now(),
             ]);
         });
 
-        // 完了後、申請一覧画面へリダイレクト
-          return redirect()->route('attendance_correction.list')
-                         ->with('success', '修正申請を承認し、本編データを更新しました。');
+        if ($alreadyApproved) {
+            return redirect()->route('admin.correction.list')
+                ->with('success', 'この申請はすでに承認済みです。');
+        }
+
+        return redirect()->route('admin.correction.list')
+            ->with('success', '修正申請を承認し、勤怠情報を更新しました。');
     }
 }

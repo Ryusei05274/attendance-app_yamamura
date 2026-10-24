@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: ブロードキャスト機能のチャンネル登録を行う。
+ */
+
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Broadcast;

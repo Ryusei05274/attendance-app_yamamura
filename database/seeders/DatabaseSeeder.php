@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 開発・確認用のユーザー、勤怠、休憩データを作成する。
+ */
+
 namespace Database\Seeders;
 
 use App\Models\Attendance;
@@ -16,6 +20,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // サンプル用の一般ユーザー2名と管理者1名を作成する。
+        // 全員のパスワードは「password」、メール認証済みとして登録する。
         $users = collect([
             ['name' => 'ユーザー1', 'email' => 'user1@example.com', 'role' => 'user', 'is_admin' => false],
             ['name' => 'ユーザー2', 'email' => 'user2@example.com', 'role' => 'user', 'is_admin' => false],
@@ -28,11 +34,14 @@ class DatabaseSeeder extends Seeder
                 'admin_status' => $attributes['is_admin'],
             ]));
             $user->save();
+
             return $user;
         });
 
+        // 再実行時に同じユーザーの勤怠が重複しないよう、既存の勤怠を削除して作り直す。
         Attendance::whereIn('user_id', $users->pluck('id'))->delete();
 
+        // 過去5か月は各月15日、当月は17日分の勤怠データを作成する。
         $months = [];
         for ($monthsAgo = 5; $monthsAgo >= 1; $monthsAgo--) {
             $months[] = [
@@ -42,6 +51,7 @@ class DatabaseSeeder extends Seeder
         }
         $months[] = ['month' => now()->startOfMonth(), 'days' => 17];
 
+        // 各ユーザー・各月の平日を選び、勤怠と休憩を登録する。
         foreach ($users as $userIndex => $user) {
             foreach ($months as $monthIndex => $monthData) {
                 $workDates = $this->firstWeekdays($monthData['month'], $monthData['days']);
@@ -55,6 +65,7 @@ class DatabaseSeeder extends Seeder
                         'clock_out' => $clockOut,
                     ]);
 
+                    // 全勤怠に共通の昼休憩（12:00〜13:00）を1件登録する。
                     BreakLog::create([
                         'attendance_id' => $attendance->id,
                         'break_in' => '12:00:00',
@@ -68,6 +79,7 @@ class DatabaseSeeder extends Seeder
     /** @return array<int, Carbon> */
     private function firstWeekdays(Carbon $month, int $count): array
     {
+        // 指定月の初日から平日だけを数え、必要な件数の日付を返す。
         $dates = [];
         $date = $month->copy()->startOfMonth();
 
@@ -84,6 +96,7 @@ class DatabaseSeeder extends Seeder
     /** @return array{string, string} */
     private function timesFor(int $userIndex, int $monthIndex, int $dayIndex): array
     {
+        // ユーザー1の当月17件は、レポート確認用に勤務パターンを意図的に分ける。
         if ($userIndex === 0 && $monthIndex === 5) {
             return match (true) {
                 $dayIndex < 10 => ['09:00:00', '18:00:00'],

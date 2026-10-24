@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: LaravelのUnitテスト実行環境を確認するサンプルテスト。
+ */
+
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;

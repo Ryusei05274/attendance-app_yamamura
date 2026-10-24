@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠の休憩開始・終了時刻と勤怠との関連を表す。
+ */
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

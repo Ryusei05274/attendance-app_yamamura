@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: テスト実行用にLaravelアプリケーションを起動する。
+ */
+
 namespace Tests;
 
 use Illuminate\Contracts\Console\Kernel;

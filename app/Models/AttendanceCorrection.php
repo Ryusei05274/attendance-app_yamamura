@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 役割: 勤怠修正申請の内容、状態、関連する勤怠・ユーザーを表す。
+ */
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
